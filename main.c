@@ -202,7 +202,7 @@ int main()
             leftPaddle.rect.x = leftPaddlePos.x;
             leftPaddle.rect.y = leftPaddlePos.y;
 
-            leftPaddle.rect.y = fmaxf(leftPaddle.rect.y, 20.0f);
+            leftPaddle.rect.y = fmaxf(leftPaddle.rect.y, 10.0f);
         }
 
         if (IsKeyDown(KEY_S))
@@ -212,9 +212,9 @@ int main()
             leftPaddle.rect.x = leftPaddlePos.x;
             leftPaddle.rect.y = leftPaddlePos.y;
 
-            if ((leftPaddle.rect.y + leftPaddle.rect.height) > (float)screenHeight - 20.0f)
+            if ((leftPaddle.rect.y + leftPaddle.rect.height) > (float)screenHeight - 10.0f)
             {
-                leftPaddle.rect.y = ((float)screenHeight - 20.0f) - leftPaddle.rect.height;
+                leftPaddle.rect.y = ((float)screenHeight - 10.0f) - leftPaddle.rect.height;
             }
         }
 
@@ -226,7 +226,7 @@ int main()
             rightPaddle.rect.x = rightPaddlePos.x;
             rightPaddle.rect.y = rightPaddlePos.y;
 
-            rightPaddle.rect.y = fmaxf(rightPaddle.rect.y, 20.0f);
+            rightPaddle.rect.y = fmaxf(rightPaddle.rect.y, 10.0f);
         }
 
         if (IsKeyDown(KEY_DOWN))
@@ -236,9 +236,9 @@ int main()
             rightPaddle.rect.x = rightPaddlePos.x;
             rightPaddle.rect.y = rightPaddlePos.y;
 
-            if ((rightPaddle.rect.y + rightPaddle.rect.height) > (float)screenHeight - 20.0f)
+            if ((rightPaddle.rect.y + rightPaddle.rect.height) > (float)screenHeight - 10.0f)
             {
-                rightPaddle.rect.y = ((float)screenHeight - 20.0f) - rightPaddle.rect.height;
+                rightPaddle.rect.y = ((float)screenHeight - 10.0f) - rightPaddle.rect.height;
             }
         }
 
