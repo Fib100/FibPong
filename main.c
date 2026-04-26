@@ -31,6 +31,8 @@ struct Ball ball = { 0 };
 Color primaryColor = (Color){ 251, 191, 0, 255 };
 float startTimer = 0.0f;
 bool startTimerIsRunning = false;
+unsigned int bounceCount = 1;
+unsigned int numSpeedIncreases = 0;
 
 // Balancing values
 const unsigned int winMax = 7;
@@ -54,12 +56,15 @@ int GetRandomSign()
 // Resets ball after scoring
 void ResetBall()
 {
-    ball.position = (Vector2) { (float)screenWidth / 2.0f, (float)screenHeight / 2.0f };
+    ball.position = (Vector2) { (float)screenWidth / 2.0f, (float)GetRandomValue(20, screenHeight - 20) };
     ball.direction.x = 1.0f;
     ball.direction.y = -1.0f;
     ball.direction = Vector2Normalize(ball.direction);
     ball.direction.x *= GetRandomSign();
+    ball.direction.y *= GetRandomSign();
     ball.speed = 0.0f;
+    bounceCount = 1;
+    numSpeedIncreases = 0;
     startTimer = startTimeMax;
     startTimerIsRunning = true;
 }
@@ -197,10 +202,7 @@ int main()
             leftPaddle.rect.x = leftPaddlePos.x;
             leftPaddle.rect.y = leftPaddlePos.y;
 
-            if (leftPaddle.rect.y < 20.0f)
-            {
-                leftPaddle.rect.y = 20.0f;
-            }
+            leftPaddle.rect.y = fmaxf(leftPaddle.rect.y, 20.0f);
         }
 
         if (IsKeyDown(KEY_S))
@@ -216,7 +218,7 @@ int main()
             }
         }
 
-        // Right paddle movement
+        // Right paddle movementd
         if (IsKeyDown(KEY_UP))
         {
             Vector2 rightPaddlePos = (Vector2){ rightPaddle.rect.x, rightPaddle.rect.y };
@@ -224,10 +226,7 @@ int main()
             rightPaddle.rect.x = rightPaddlePos.x;
             rightPaddle.rect.y = rightPaddlePos.y;
 
-            if (rightPaddle.rect.y < 20.0f)
-            {
-                rightPaddle.rect.y = 20.0f;
-            }
+            rightPaddle.rect.y = fmaxf(rightPaddle.rect.y, 20.0f);
         }
 
         if (IsKeyDown(KEY_DOWN))
@@ -264,6 +263,7 @@ int main()
         {
             ball.direction.x = 1.0f;
             ball.speed = ballSpeedMax;
+            bounceCount += 1;
             PlaySound(sounds[0]);
         }
 
@@ -272,12 +272,19 @@ int main()
         {
             ball.direction.x = -1.0f;
             ball.speed = ballSpeedMax;
+            bounceCount += 1;
             PlaySound(sounds[0]);
+        }
+
+        if (bounceCount % 10 == 0)
+        {
+            numSpeedIncreases += 1;
+            bounceCount = 1;
         }
 
         // Ball movement
         ball.direction = Vector2Normalize(ball.direction);
-        ball.position = MoveGameObject(ball.position, ball.direction, ball.speed, dt);
+        ball.position = MoveGameObject(ball.position, ball.direction, ball.speed + (float)(numSpeedIncreases * 150), dt);
 
         // Scoring - left paddle loses
         if (ball.position.x < -32.0f)
