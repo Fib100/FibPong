@@ -2,6 +2,10 @@
 #include "raymath.h"
 #include <time.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#define NUM_SOUNDS 7
 
 struct Paddle
 {
@@ -29,7 +33,7 @@ float startTimer = 0.0f;
 bool startTimerIsRunning = false;
 
 // Balancing values
-const unsigned int winMax = 1;
+const unsigned int winMax = 7;
 const float ballSpeedMax = 800.0f;
 const float startTimeMax = 3.0f;
 
@@ -75,6 +79,7 @@ int main()
     float dt = 0.0f;
     unsigned int leftScore = 0;
     unsigned int rightScore = 0;
+    int lock = 0;
 
     InitWindow(screenWidth, screenHeight, "Pong");
     InitAudioDevice();
@@ -82,8 +87,26 @@ int main()
     SetExitKey(KEY_NULL);
     SetRandomSeed((unsigned int)time(nullptr));
 
+    Music bgMusic = LoadMusicStream("assets/midnight_drive.ogg");
+    bgMusic.looping = true;
+    SetMusicVolume(bgMusic, 0.4f);
+    PlayMusicStream(bgMusic);
+
+    Sound sounds[NUM_SOUNDS];
+    sounds[0] = LoadSound("assets/ballHitPaddle.wav");
+    sounds[1] = LoadSound("assets/ballHitWall.wav");
+    sounds[2] = LoadSound("assets/countdown1.wav");
+    sounds[3] = LoadSound("assets/countdown2.wav");
+    sounds[4] = LoadSound("assets/lose.wav");
+    sounds[5] = LoadSound("assets/restart.wav");
+    sounds[6] = LoadSound("assets/ballStart.wav");
+
     while (!shouldExitGameLoop)
     {
+        // Update music stream buffers
+        UpdateMusicStream (bgMusic);
+
+        // Initialize scene
         if (!hasSceneInitialized)
         {
             hasSceneInitialized = true;
@@ -105,7 +128,7 @@ int main()
                 
             ResetBall();
         }
-            
+
         // = Update =============================================================
         dt = GetFrameTime();
 
@@ -126,6 +149,11 @@ int main()
                 gameOverState = 0;
                 startTimer = startTimeMax;
                 startTimerIsRunning = true;
+                PlaySound(sounds[5]);
+                if (!IsMusicStreamPlaying(bgMusic))
+                {
+                    PlayMusicStream(bgMusic);
+                }
             }
         }
 
@@ -133,12 +161,31 @@ int main()
         if (startTimerIsRunning && gameOverState == 0)
         {
             startTimer -= dt;
+
+            // Play countdown timer
+            if (startTimer <= (startTimeMax) / 3 * 2 && lock == 0)
+            {
+                PlaySound(sounds[2]);
+                lock += 1;
+            }
+
+            if (startTimer <= (startTimeMax) / 3 && lock == 1)
+            {
+                PlaySound(sounds[2]);
+                lock += 1;
+            }
+
+            // Timer has expired
             if (startTimer <= 0.0f)
             {
                 startTimerIsRunning = false;
                 startTimer = 0.0f;
+                lock = 0;
                 
                 ball.speed = ballSpeedMax / 2.0f;
+
+                PlaySound(sounds[3]);
+                PlaySound(sounds[6]);
             }
         }
 
@@ -201,6 +248,7 @@ int main()
         {
             ball.position.y = 0.0f;
             ball.direction.y = 1.0f;
+            PlaySound(sounds[1]);
         }
 
         // Ball boounce - bottom
@@ -208,6 +256,7 @@ int main()
         {
             ball.position.y = (float)screenHeight;
             ball.direction.y = -1.0f;
+            PlaySound(sounds[1]);
         }
 
         // Ball boounce - left paddle
@@ -215,6 +264,7 @@ int main()
         {
             ball.direction.x = 1.0f;
             ball.speed = ballSpeedMax;
+            PlaySound(sounds[0]);
         }
 
         // Ball boounce - right paddle
@@ -222,6 +272,7 @@ int main()
         {
             ball.direction.x = -1.0f;
             ball.speed = ballSpeedMax;
+            PlaySound(sounds[0]);
         }
 
         // Ball movement
@@ -233,6 +284,7 @@ int main()
         {
             rightScore += 1;
             ResetBall();
+            PlaySound(sounds[4]);
         }
 
         // Scoring - right paddle loses
@@ -240,6 +292,7 @@ int main()
         {
             leftScore += 1;
             ResetBall();
+            PlaySound(sounds[4]);
         }
 
         // Check game over state
@@ -261,6 +314,7 @@ int main()
 
         if (gameOverState != 0 && !startTimerIsRunning)
         {
+            StopMusicStream(bgMusic);
             startTimer = startTimeMax * 2.0f;
             startTimerIsRunning = true;
         }
@@ -283,8 +337,12 @@ int main()
             DrawCircle(ball.position.x, ball.position.y, ball.radius, ball.color);
 
             // Draw score
-            DrawText(TextFormat("%02i", leftScore), screenWidth / 2 - 112, 20, 48, primaryColor);
-            DrawText(TextFormat("%02i", rightScore), (screenWidth / 2) + 64, 20, 48, primaryColor);
+            char buffer[16];
+            sprintf_s(buffer, 16, "%02i", leftScore);
+            DrawText(buffer, screenWidth / 2 - 112, 20, 48, primaryColor);
+            memset(buffer, 0, 16);
+            sprintf_s(buffer, 16, "%02i", rightScore);
+            DrawText(buffer, (screenWidth / 2) + 64, 20, 48, primaryColor);
 
             if (gameOverState == 1)
             {
@@ -302,6 +360,11 @@ int main()
             shouldExitGameLoop = true;
     }
 
+    for (int i = 0; i < NUM_SOUNDS; i++)
+    {
+        UnloadSound(sounds[i]);
+    }
+    UnloadMusicStream(bgMusic);
     CloseAudioDevice();
     CloseWindow();
 
