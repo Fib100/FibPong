@@ -86,7 +86,6 @@ int main()
 {
     bool shouldExitGameLoop = false;
     bool isExitRequested = false;
-    bool hasSceneInitialized = false;
     float dt = 0.0f;
     enum PongGameState gameState = PLAYING;
     unsigned int leftScore = 0;
