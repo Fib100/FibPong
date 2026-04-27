@@ -110,7 +110,7 @@ int main()
     while (!shouldExitGameLoop)
     {
         // Update music stream buffers
-        UpdateMusicStream (bgMusic);
+        UpdateMusicStream(bgMusic);
 
         // Initialize scene
         if (!hasSceneInitialized)
@@ -138,15 +138,11 @@ int main()
         // = Update =============================================================
         dt = GetFrameTime();
 
-        if (IsKeyPressed(KEY_F1))
-        {
-            ToggleFullscreen();
-        }
-
         // Wait after game over to show who wins
         if (startTimerIsRunning && gameOverState != 0)
         {
             startTimer -= dt;
+            // Timer has expired
             if (startTimer <= 0.0f)
             {
                 startTimerIsRunning = false;
@@ -189,7 +185,6 @@ int main()
                 lock = 0;
                 
                 ball.speed = ballSpeedMax / 2.0f;
-
                 PlaySound(sounds[3]);
                 PlaySound(sounds[6]);
             }
@@ -320,6 +315,7 @@ int main()
             rightScore = 0;
         }
 
+        // It's game over so start a new timer to restart the game
         if (gameOverState != 0 && !startTimerIsRunning)
         {
             StopMusicStream(bgMusic);
@@ -361,6 +357,7 @@ int main()
             trailColor.a = 30;
             DrawCircle(ball.position.x + (-ball.direction.x * ball.speed * dt * 3.0f), ball.position.y + (-ball.direction.y * ball.speed * dt * 3.0f), ball.radius, trailColor);
 
+            // Draw win text if game over
             if (gameOverState == 1)
             {
                 DrawText("Left wins!", (screenWidth / 2) - 120, 200, 48, primaryColor);
