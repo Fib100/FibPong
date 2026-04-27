@@ -29,6 +29,7 @@ struct Paddle leftPaddle = { 0 };
 struct Paddle rightPaddle = { 0 };
 struct Ball ball = { 0 };
 Color primaryColor = (Color){ 251, 191, 0, 255 };
+Color bgColor = (Color){ 20, 20, 20, 255};
 float startTimer = 0.0f;
 bool startTimerIsRunning = false;
 unsigned int bounceCount = 1;
@@ -86,7 +87,7 @@ int main()
     unsigned int rightScore = 0;
     int lock = 0;
 
-    InitWindow(screenWidth, screenHeight, "Pong");
+    InitWindow(screenWidth, screenHeight, "Fib Pong");
     InitAudioDevice();
     SetTargetFPS(60);
     SetExitKey(KEY_NULL);
@@ -328,7 +329,7 @@ int main()
 
         // = Draw =============================================================
         BeginDrawing();
-            ClearBackground((Color){ 20, 20, 20, 255});
+            ClearBackground(bgColor);
 
             // Draw BG
             DrawLineDashed((Vector2){ .x = (float)screenWidth / 2.0f, .y = 0.0f }, (Vector2){ .x = (float)screenWidth / 2.0f, (float)screenHeight }, 32, 16, primaryColor);
@@ -340,16 +341,25 @@ int main()
             DrawRectangleRec(leftPaddle.rect, leftPaddle.color);
             DrawRectangleRec(rightPaddle.rect, rightPaddle.color);
 
-            // Draw ball
-            DrawCircle(ball.position.x, ball.position.y, ball.radius, ball.color);
+            // Draw game name and score
+            DrawRectangle(screenWidth / 2 - 64, 4, 128, 40, bgColor);
+            DrawText("- Fib Pong -", screenWidth / 2 - 74, 10, 24, primaryColor);
 
-            // Draw score
             char buffer[16];
             sprintf_s(buffer, 16, "%02i", leftScore);
-            DrawText(buffer, screenWidth / 2 - 112, 20, 48, primaryColor);
+            DrawText(buffer, screenWidth / 2 - 112, 48, 48, primaryColor);
             memset(buffer, 0, 16);
             sprintf_s(buffer, 16, "%02i", rightScore);
-            DrawText(buffer, (screenWidth / 2) + 64, 20, 48, primaryColor);
+            DrawText(buffer, (screenWidth / 2) + 64, 48, 48, primaryColor);
+
+            // Draw ball
+            DrawCircle(ball.position.x, ball.position.y, ball.radius, ball.color);
+            // Draw ball trail
+            Color trailColor = ball.color;
+            trailColor.a = 100;
+            DrawCircle(ball.position.x + (-ball.direction.x * ball.speed * dt * 1.5f), ball.position.y + (-ball.direction.y * ball.speed * dt * 1.5f), ball.radius, trailColor);
+            trailColor.a = 30;
+            DrawCircle(ball.position.x + (-ball.direction.x * ball.speed * dt * 3.0f), ball.position.y + (-ball.direction.y * ball.speed * dt * 3.0f), ball.radius, trailColor);
 
             if (gameOverState == 1)
             {
