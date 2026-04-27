@@ -23,6 +23,12 @@ struct Ball
     Color color;
 };
 
+enum PongGameState : unsigned int {
+    PLAYING,
+    LEFT_WINS,
+    RIGHT_WINS
+};
+
 const int screenWidth = 1280;
 const int screenHeight = 720;
 struct Paddle leftPaddle = { 0 };
@@ -40,7 +46,7 @@ const unsigned int winMax = 7;
 const float ballSpeedMax = 800.0f;
 const float startTimeMax = 3.0f;
 
-// Returns a value of 1 or -1 ranodmly
+// Returns a value of 1 or -1 randomly
 int GetRandomSign()
 {
     int result = 1;
@@ -81,8 +87,8 @@ int main()
     bool shouldExitGameLoop = false;
     bool isExitRequested = false;
     bool hasSceneInitialized = false;
-    unsigned int gameOverState = 0; // 0 = playing, 1 = left wins, 2 = right wins
     float dt = 0.0f;
+    enum PongGameState gameState = PLAYING;
     unsigned int leftScore = 0;
     unsigned int rightScore = 0;
     int lock = 0;
@@ -107,39 +113,32 @@ int main()
     sounds[5] = LoadSound("assets/restart.wav");
     sounds[6] = LoadSound("assets/ballStart.wav");
 
+    // Initialize game objects
+    leftPaddle =
+        (struct Paddle){ .rect = (Rectangle){ .x = 100.0f, .y = 360.0f - 54.0f, .width = 12.0f, .height = 140.0f },
+        .speed = 600.0f,
+        .color = primaryColor};
+        
+    rightPaddle =
+        (struct Paddle){ .rect = (Rectangle){ .x = (float)screenWidth - 100.0f, .y = 360.0f - 54.0f, .width = 12.0f, .height = 140.0f },
+        .speed = 600.0f,
+        .color = primaryColor};
+        
+    ball = (struct Ball){ .position = (Vector2){ .x = (float)screenWidth / 2.0f, .y = (float)screenHeight / 2.0f },
+        .speed = 0.0f, .radius = 12.0f,
+        .direction = (Vector2){ .x = 1.0f, .y = -1.0f },
+        .color = primaryColor};
+        
+    ResetBall();
+
     while (!shouldExitGameLoop)
     {
-        // Update music stream buffers
-        UpdateMusicStream(bgMusic);
-
-        // Initialize scene
-        if (!hasSceneInitialized)
-        {
-            hasSceneInitialized = true;
-
-            leftPaddle =
-                (struct Paddle){ .rect = (Rectangle){ .x = 100.0f, .y = 360.0f - 54.0f, .width = 12.0f, .height = 140.0f },
-                .speed = 600.0f,
-                .color = primaryColor};
-                
-            rightPaddle =
-                (struct Paddle){ .rect = (Rectangle){ .x = (float)screenWidth - 100.0f, .y = 360.0f - 54.0f, .width = 12.0f, .height = 140.0f },
-                .speed = 600.0f,
-                .color = primaryColor};
-                
-            ball = (struct Ball){ .position = (Vector2){ .x = (float)screenWidth / 2.0f, .y = (float)screenHeight / 2.0f },
-                .speed = 0.0f, .radius = 12.0f,
-                .direction = (Vector2){ .x = 1.0f, .y = -1.0f },
-                .color = primaryColor};
-                
-            ResetBall();
-        }
-
         // = Update =============================================================
         dt = GetFrameTime();
+        UpdateMusicStream(bgMusic);
 
         // Wait after game over to show who wins
-        if (startTimerIsRunning && gameOverState != 0)
+        if (startTimerIsRunning && gameState != PLAYING)
         {
             startTimer -= dt;
             // Timer has expired
@@ -148,7 +147,7 @@ int main()
                 startTimerIsRunning = false;
                 startTimer = 0.0f;
                 
-                gameOverState = 0;
+                gameState = PLAYING;
                 startTimer = startTimeMax;
                 startTimerIsRunning = true;
                 PlaySound(sounds[5]);
@@ -160,7 +159,7 @@ int main()
         }
 
         // Wait a few seconds at start
-        if (startTimerIsRunning && gameOverState == 0)
+        if (startTimerIsRunning && gameState == PLAYING)
         {
             startTimer -= dt;
 
@@ -301,7 +300,7 @@ int main()
         // Check game over state
         if (leftScore >= winMax)
         {
-            gameOverState = 1;
+            gameState = LEFT_WINS;
             startTimerIsRunning = false;
             leftScore = 0;
             rightScore = 0;
@@ -309,14 +308,14 @@ int main()
 
         if (rightScore >= winMax)
         {
-            gameOverState = 2;
+            gameState = RIGHT_WINS;
             startTimerIsRunning = false;
             leftScore = 0;
             rightScore = 0;
         }
 
         // It's game over so start a new timer to restart the game
-        if (gameOverState != 0 && !startTimerIsRunning)
+        if (gameState != PLAYING && !startTimerIsRunning)
         {
             StopMusicStream(bgMusic);
             startTimer = startTimeMax * 2.0f;
@@ -331,7 +330,7 @@ int main()
             DrawLineDashed((Vector2){ .x = (float)screenWidth / 2.0f, .y = 0.0f }, (Vector2){ .x = (float)screenWidth / 2.0f, (float)screenHeight }, 32, 16, primaryColor);
             DrawLineDashed((Vector2){ .x = ((float)screenWidth / 2.0f) + 1.0f, .y = 0.0f }, (Vector2){ .x = (float)screenWidth / 2.0f, (float)screenHeight }, 32, 16, primaryColor);
             DrawLineEx((Vector2){ 0.0f, 2.0f }, (Vector2){ (float)screenWidth, 2.0f }, 4.0f, primaryColor);
-            DrawLineEx((Vector2){ 0.0f, (float)screenHeight - 4.0f }, (Vector2){ (float)screenWidth, (float)screenHeight - 4.0f }, 4.0f, primaryColor);
+            DrawLineEx((Vector2){ 0.0f, (float)screenHeight - 2.0f }, (Vector2){ (float)screenWidth, (float)screenHeight - 2.0f }, 4.0f, primaryColor);
             
             // Draw paddles
             DrawRectangleRec(leftPaddle.rect, leftPaddle.color);
@@ -358,12 +357,12 @@ int main()
             DrawCircle(ball.position.x + (-ball.direction.x * ball.speed * dt * 3.0f), ball.position.y + (-ball.direction.y * ball.speed * dt * 3.0f), ball.radius, trailColor);
 
             // Draw win text if game over
-            if (gameOverState == 1)
+            if (gameState == LEFT_WINS)
             {
                 DrawText("Left wins!", (screenWidth / 2) - 120, 200, 48, primaryColor);
             }
 
-            if (gameOverState == 2)
+            if (gameState == RIGHT_WINS)
             {
                 DrawText("Right wins!", (screenWidth / 2) - 120, 200, 48, primaryColor);
             }
